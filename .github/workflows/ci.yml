@@ -6,9 +6,9 @@ on:
   pull_request:
     branches: [Dev, Features]
 
-    branches: [dev, features]
+    branches: [Dev, Features]
   pull_request:
-    branches: [dev, features]
+    branches: [Dev, Features]
     
 jobs:
   test:
