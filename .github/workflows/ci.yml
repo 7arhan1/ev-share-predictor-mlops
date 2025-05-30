@@ -2,9 +2,9 @@ name: Continuous Integration Building + Testing
 
 on:
   push:
-    branches: [dev, features]
+    branches: [Dev, Features]
   pull_request:
-    branches: [dev, features]
+    branches: [Dev, Features]
 
 jobs:
   test:
