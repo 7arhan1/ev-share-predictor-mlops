@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [Dev, Features]
 
+    branches: [dev, features]
+  pull_request:
+    branches: [dev, features]
+    
 jobs:
   test:
     runs-on: ubuntu-latest
