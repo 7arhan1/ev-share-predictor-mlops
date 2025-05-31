@@ -61,14 +61,15 @@ jobs:
     - name: SSH into GCP VM and deploy to Minikube
       run: |
         gcloud compute ssh testosteroneig@docker-practical1 \
-          --zone=europe-west4-b \
-          --command="
-            cd /home/testosteroneig/ && \
-            rm -rf ev-share-predictor-mlops && \
-            https://github.com/7arhan1/ev-share-predictor-mlops.git && \
-            cd ev-share-predictor-mlops && \
-            python3 model.py && \
-            cd minikube_services && \
-            /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
-            sleep 5 && \
-            /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
+        --zone=europe-west4-b \
+        --command="
+          cd /home/testosteroneig/ && \
+          rm -rf ev-share-predictor-mlops && \
+          git clone https://github.com/7arhan1/ev-share-predictor-mlops.git && \
+          cd ev-share-predictor-mlops && \
+          python3 model.py && \
+          cd minikube_services && \
+          /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
+          sleep 5 && \
+          /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml
+        "
