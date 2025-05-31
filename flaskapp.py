@@ -25,7 +25,7 @@ def predict():
     # Uncomment this for actual prediction:
     prediction = model.predict(data)
     formatted_prediction = f"Predicted EV stock share for {int(year)}: {round(float(prediction[0]), 2)}%"
-
+    formatted_prediction = 222
     return render_template("result.html", prediction=formatted_prediction)
 
 if __name__ == "__main__":
