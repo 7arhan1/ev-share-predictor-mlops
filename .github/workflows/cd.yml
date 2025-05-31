@@ -60,7 +60,7 @@ jobs:
 
     - name: SSH into GCP VM and deploy to Minikube
       run: |
-          gcloud compute ssh docker-practical1 --project=ultra-complex-453410-t3 --zone=europe-west4-b --troubleshoot"
+          gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
           cd /home/testosteroneig && \
           rm -rf ev-share-predictor-mlops && \
           git clone -b Dev https://github.com/7arhan1/ev-share-predictor-mlops.git && \
