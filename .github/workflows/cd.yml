@@ -1,20 +1,31 @@
 name: Minikube Kubernetes Deployment on GCP VM
 
 on:
-  workflow_run:
-    workflows: ["Continuous Integration Building + Testing"]
-    types:
-      - completed
+  push:
+    branches:
+      - Dev
+      - Prod
 
 jobs:
-  deploy:
-    if: ${{
-        github.event.workflow_run.conclusion == 'success' &&
-        (github.event.workflow_run.head_branch == 'Dev' || github.event.workflow_run.head_branch == 'Prod')
-      }}
+  test:
     runs-on: ubuntu-latest
-
     steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python3 -m unittest discover tests
+
+        steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -40,18 +51,18 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
           docker build -t $IMAGE_NAME:latest \
-                       -t $IMAGE_NAME:${{ github.event.workflow_run.head_branch }} \
-                       -t $IMAGE_NAME:${{ github.event.workflow_run.head_branch }}-$SHORT_SHA .
+                       -t $IMAGE_NAME:${{ github.ref_name }} \
+                       -t $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA .
 
           docker push $IMAGE_NAME:latest
-          docker push $IMAGE_NAME:${{ github.event.workflow_run.head_branch }}
-          docker push $IMAGE_NAME:${{ github.event.workflow_run.head_branch }}-$SHORT_SHA
+          docker push $IMAGE_NAME:${{ github.ref_name }}
+          docker push $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA
 
       - name: SSH and deploy (inline script)
         run: |
           gcloud compute ssh testosteroneig@l0018744-dockernode \
             --zone=europe-west4-b \
-            --command="\
+            --command="
               cd /home/testosteroneig/ && \
               rm -rf ev-share-predictor-mlops && \
               git clone https://github.com/7arhan1/ev-share-predictor-mlops.git && \
