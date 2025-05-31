@@ -51,7 +51,7 @@ jobs:
     - name: Install gcloud CLI
       uses: google-github-actions/setup-gcloud@v1
       with:
-        project_id: your-gcp-project-id
+        project_id: ultra-complex-453410-t3
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
