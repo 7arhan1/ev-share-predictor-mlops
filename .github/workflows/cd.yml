@@ -74,7 +74,6 @@ jobs:
           sudo pip3 install -r requirements.txt && \
           python3 model.py && \
           cd minikube_services && \
-          /usr/local/bin/minikube start --driver=docker && \
           /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
           sleep 5 && \
           /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
