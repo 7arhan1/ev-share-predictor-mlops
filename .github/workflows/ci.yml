@@ -2,8 +2,8 @@ name: Continuous Integration Building + Testing
 
 on:
   push:
-    branches: Dev  
-    
+    branches: [Dev]
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -24,20 +24,20 @@ jobs:
     - name: Generate model.pkl
       run: |
         python3 model.py
-          
+
     - name: Run Unit and Integration Tests
       run: |
         python3 -m unittest tests.test_model
 
   deploy:
     needs: test
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-      steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
