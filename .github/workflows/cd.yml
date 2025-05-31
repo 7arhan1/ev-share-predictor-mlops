@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +27,6 @@ jobs:
           python3 -m unittest discover tests
 
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
