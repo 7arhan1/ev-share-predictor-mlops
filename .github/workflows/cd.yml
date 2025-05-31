@@ -63,14 +63,7 @@ jobs:
 
       - name: SSH and deploy with retry logic
         run: |
-          RETRIES=5
-          COUNT=0
-          SUCCESS=0
-
-          while [ $COUNT -lt $RETRIES ]; do
-            echo "Attempt $(($COUNT + 1)) of $RETRIES..."
-
-            gcloud compute ssh testosteroneig@l0018744-dockernode \
+              gcloud compute ssh testosteroneig@l0018744-dockernode \
               --zone=europe-west4-b \
               --command="
                 cd /home/testosteroneig/ && \
