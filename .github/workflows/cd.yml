@@ -69,6 +69,6 @@ jobs:
             cd ev-share-predictor-mlops && \
             python3 model.py && \
             cd minikube_services && \
-            /usr/local/bin/minikube kubectl -- delete -f ./deployment.yaml || true && \
+            /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
             sleep 5 && \
-            /usr/local/bin/minikube kubectl -- apply -f ./deployment.yaml"
+            /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
