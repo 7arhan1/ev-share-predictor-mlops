@@ -3,72 +3,77 @@ name: Continuous Deployment to Minikube on GCP VM
 on:
   push:
     branches:
-      - Dev
       - Prod
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.8
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
-    - name: Generate model.pkl
-      run: python3 model.py
+      - run: python3 model.py
 
-    #- name: Run basic tests before deploy
-      #run: python3 -m unittest discover tests
+      - run: python3 -m unittest discover tests
 
-    - name: Authenticate to GCP
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
+      - run: echo "✅ Tests passed"
 
-    - name: Install gcloud CLI
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ultra-complex-453410-t3
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🚀 Starting deploy job"
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - uses: actions/checkout@v3
 
-    - name: Build and push Docker image
-      run: |
-        IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
-        SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
-        docker build -t $IMAGE_NAME:latest \
-                     -t $IMAGE_NAME:${{ github.ref_name }} \
-                     -t $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA .
+      - run: pip install -r requirements.txt
 
-        docker push $IMAGE_NAME:latest
-        docker push $IMAGE_NAME:${{ github.ref_name }}
-        docker push $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA
+      - run: python3 model.py
 
-    - name: SSH into GCP VM and deploy to Minikube
-      run: |
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
+
+      - uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ultra-complex-453410-t3
+
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - run: |
+          IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+
+          docker build -t $IMAGE_NAME:latest \
+                       -t $IMAGE_NAME:Prod \
+                       -t $IMAGE_NAME:Prod-$SHORT_SHA .
+
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:Prod
+          docker push $IMAGE_NAME:Prod-$SHORT_SHA
+
+      - name: SSH and deploy
+        run: |
           gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
           cd /home/testosteroneig && \
           rm -rf ev-share-predictor-mlops && \
-          git clone -b Dev https://github.com/7arhan1/ev-share-predictor-mlops.git && \
+          git clone -b Prod https://github.com/7arhan1/ev-share-predictor-mlops.git && \
           cd ev-share-predictor-mlops && \
           sudo pip3 install -r requirements.txt && \
           python3 model.py && \
           cd minikube_services && \
-          ls -l && \
           /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
           sleep 5 && \
           /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
