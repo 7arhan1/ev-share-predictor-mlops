@@ -1,5 +1,3 @@
-cd 
-
 name: Minikube Kubernetes Deployment on GCP VM
 
 on:
