@@ -1,4 +1,6 @@
-name: Continuous Integration Building + Testing
+# .github/workflows/ci.yml
+
+name: Continuous Integration – Build & Test
 
 on:
   push:
@@ -11,26 +13,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
 
-      - name: Generate model.pkl by running model.py
-        run: |
-          python3 model.py
+    - name: Generate model.pkl
+      run: python3 model.py
 
-      - name: Run Unit Tests (model tests)
-        run: |
-          python3 -m unittest discover tests
-
-      - name: Run Integration Tests (Flask app tests)
-        run: |
-          python3 -m unittest tests.test_int
+    - name: Run unit and integration tests
+      run: python3 -m unittest discover tests
