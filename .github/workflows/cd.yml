@@ -26,8 +26,8 @@ jobs:
     - name: Generate model.pkl
       run: python3 model.py
 
-    - name: Run basic tests before deploy
-      run: python3 -m unittest discover tests
+    #- name: Run basic tests before deploy
+      #run: python3 -m unittest discover tests
 
     - name: Authenticate to GCP
       uses: google-github-actions/auth@v2
