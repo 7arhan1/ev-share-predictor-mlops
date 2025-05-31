@@ -5,6 +5,9 @@ on:
     workflows: ["Continuous Integration Building + Testing"]
     types:
       - completed
+    branches:
+        - Dev
+        - Prod
 
 jobs:
   deploy:
