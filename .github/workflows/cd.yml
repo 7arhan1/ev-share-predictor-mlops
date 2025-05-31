@@ -1,8 +1,9 @@
-mname: Minikube Kubernetes Deployment on GCP VM
+name: Minikube Kubernetes Deployment on GCP VM
 
 on:
   push:
     branches:
+      - Dev
       - Prod
 
 jobs:
