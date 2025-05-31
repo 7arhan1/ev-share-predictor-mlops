@@ -63,7 +63,7 @@ jobs:
         gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
         cd /home/testosteroneig && \
         rm -rf ev-share-predictor-mlops && \
-        git clone -b Prod https://github.com/7arhan1/ev-share-predictor-mlops.git && \
+        git clone -b Dev https://github.com/7arhan1/ev-share-predictor-mlops.git && \
         cd ev-share-predictor-mlops && \
         ls -l && \
         python3 model.py && \
