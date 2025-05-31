@@ -7,77 +7,49 @@ on:
       - Prod
 
 jobs:
-  mlops_Testing:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3 # Checks out your repository code
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8' # Or your desired Python version
-
-      - name: Install dependencies
-        run: |
-          pip install pytest pytest-flask pandas scikit-learn joblib
-          pip install -r requirements.txt
-          
-      - name: Run Unit and Integration Tests
-        run: |
-          python3 -m unittest tests.test_model
-
-      - name: Set PYTHONPATH
-        # This command adds the root of your repository to Python's search path.
-        # $GITHUB_WORKSPACE points to /home/runner/work/mlops_project/mlops_project/
-        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-
-      - name: Run tests
-        # Pytest will now be able to find 'model.py' because $GITHUB_WORKSPACE is in PYTHONPATH
-        # Make sure your test file is indeed named test_model_training.py
-        run: pytest tests/test_model_training.py
-        # Alternatively, to discover all tests in the 'tests' directory: pytest tests/
-
   deploy:
-    needs: mlops_Testing
+    needs: test  # Must match the job name in your CI workflow
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/Prod'  # Optional: deploy only from Prod
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Authenticate to GCP
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
 
-    - name: Install gcloud CLI
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ultra-complex-453410-t3
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ultra-complex-453410-t3
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    - name: Build and push Docker image with tags
-      run: |
-        IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
-        SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+      - name: Build and push Docker image with tags
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
-        docker build -t $IMAGE_NAME:latest \
-                     -t $IMAGE_NAME:${{ github.ref_name }} \
-                     -t $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA .
+          docker build -t $IMAGE_NAME:latest \
+                       -t $IMAGE_NAME:${{ github.ref_name }} \
+                       -t $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA .
 
-        docker push $IMAGE_NAME:latest
-        docker push $IMAGE_NAME:${{ github.ref_name }}
-        docker push $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.ref_name }}
+          docker push $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA
 
-    - name: SSH and deploy (inline script)
-      run: |
-        gcloud compute ssh testosteroneig@l0018744-dockernode \
-          --zone=europe-west4-b \
-          --command="
+      - name: SSH and deploy (inline script)
+        run: |
+          gcloud compute ssh testosteroneig@l0018744-dockernode \
+            --zone=europe-west4-b \
+            --command="\
               cd /home/testosteroneig/ && \
               rm -rf ev-share-predictor-mlops && \
               git clone https://github.com/7arhan1/ev-share-predictor-mlops.git && \
