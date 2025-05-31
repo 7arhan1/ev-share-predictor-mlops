@@ -8,86 +8,73 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.8
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
-    - name: Generate model.pkl
-      run: python3 model.py
+      - run: python3 model.py
 
-    - name: Run unit and integration tests
-      run: python3 -m unittest discover tests
+      - run: python3 -m unittest discover tests
+
+      - run: echo "✅ Tests passed"
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - run: echo "🚀 Starting deploy job"
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.8
+      - uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
-    - name: Generate model.pkl
-      run: python3 model.py
+      - run: pip install -r requirements.txt
 
-    - name: Authenticate to GCP
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
+      - run: python3 model.py
 
-    - name: Install gcloud CLI
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ultra-complex-453410-t3
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ultra-complex-453410-t3
 
-    - name: Build and push Docker image
-      run: |
-        IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
-        SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-        docker build -t $IMAGE_NAME:latest \
-                     -t $IMAGE_NAME:Prod \
-                     -t $IMAGE_NAME:Prod-$SHORT_SHA .
+      - run: |
+          IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
-        docker push $IMAGE_NAME:latest
-        docker push $IMAGE_NAME:Prod
-        docker push $IMAGE_NAME:Prod-$SHORT_SHA
+          docker build -t $IMAGE_NAME:latest \
+                       -t $IMAGE_NAME:Prod \
+                       -t $IMAGE_NAME:Prod-$SHORT_SHA .
 
-    - name: SSH into GCP VM and deploy to Minikube
-      run: |
-        gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
-        cd /home/testosteroneig && \
-        rm -rf ev-share-predictor-mlops && \
-        git clone -b Prod https://github.com/7arhan1/ev-share-predictor-mlops.git && \
-        cd ev-share-predictor-mlops && \
-        sudo pip3 install -r requirements.txt && \
-        python3 model.py && \
-        cd minikube_services && \
-        /usr/local/bin/minikube start --driver=docker && \
-        /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
-        sleep 5 && \
-        /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:Prod
+          docker push $IMAGE_NAME:Prod-$SHORT_SHA
+
+      - name: SSH and deploy
+        run: |
+          gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
+          cd /home/testosteroneig && \
+          rm -rf ev-share-predictor-mlops && \
+          git clone -b Prod https://github.com/7arhan1/ev-share-predictor-mlops.git && \
+          cd ev-share-predictor-mlops && \
+          sudo pip3 install -r requirements.txt && \
+          python3 model.py && \
+          cd minikube_services && \
+          /usr/local/bin/minikube start --driver=docker && \
+          /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
+          sleep 5 && \
+          /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
