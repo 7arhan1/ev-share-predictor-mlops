@@ -11,40 +11,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Checkout Code
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # 2. Set up Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
+    # 3. Install Python Dependencies
     - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      run: pip install -r requirements.txt
 
+    # 4. Generate model
     - name: Generate model.pkl
       run: python3 model.py
 
-    - name: Run basic tests before deploy
+    # 5. Run tests
+    - name: Run unit tests
       run: python3 -m unittest discover tests
 
+    # 6. Authenticate to GCP
     - name: Authenticate to GCP
       uses: google-github-actions/auth@v2
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY_JSON }}'
 
-    - name: Install gcloud CLI
+    # 7. Set up gcloud CLI
+    - name: Set up gcloud
       uses: google-github-actions/setup-gcloud@v1
       with:
-        project_id: ultra-complex-453410-t3
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+    # 8. Setup SSH Keys
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/google_compute_engine
+        echo "${{ secrets.GCP_SSH_PUBLIC_KEY }}" > ~/.ssh/google_compute_engine.pub
+        chmod 600 ~/.ssh/google_compute_engine
+
+    # 9. Ensure public key is uploaded to VM metadata
+    - name: Add SSH key to VM metadata
+      run: |
+        echo "testosteroneig:${{ secrets.GCP_SSH_PUBLIC_KEY }}" > ssh-key.txt
+        gcloud compute instances add-metadata ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_VM_ZONE }} \
+          --metadata-from-file ssh-keys=ssh-key.txt
+
+    # 10. Docker login
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+    # 11. Build and push Docker image
     - name: Build and push Docker image
       run: |
         IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/ev-share-predictor
@@ -58,17 +82,19 @@ jobs:
         docker push $IMAGE_NAME:${{ github.ref_name }}
         docker push $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA
 
+    # 12. SSH into GCP VM and deploy
     - name: SSH into GCP VM and deploy to Minikube
       run: |
-        gcloud compute ssh testosteroneig@l0018744-dockernode \
-          --zone=europe-west4-b \
+        gcloud compute ssh testosteroneig@${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_VM_ZONE }} \
           --command="
-            cd /home/testosteroneig/ && \
-            rm -rf ev-share-predictor-mlops && \
-            git clone https://github.com/7arhan1/ev-share-predictor-mlops.git && \
-            cd ev-share-predictor-mlops && \
-            python3 model.py && \
-            cd minikube_services && \
-            /usr/local/bin/minikube kubectl -- delete -f ./deployment.yaml || true && \
-            sleep 5 && \
+            set -e
+            cd /home/testosteroneig &&
+            rm -rf ev-share-predictor-mlops &&
+            git clone https://github.com/7arhan1/ev-share-predictor-mlops.git &&
+            cd ev-share-predictor-mlops &&
+            python3 model.py &&
+            cd minikube_services &&
+            /usr/local/bin/minikube kubectl -- delete -f ./deployment.yaml || true &&
+            sleep 5 &&
             /usr/local/bin/minikube kubectl -- apply -f ./deployment.yaml"
