@@ -60,7 +60,7 @@ jobs:
 
     - name: SSH into GCP VM and deploy to Minikube
       run: |
-        gcloud compute ssh testosteroneig@l0018744-dockernode \
+        gcloud compute ssh testosteroneig@docker-practical1 \
           --zone=europe-west4-b \
           --command="
             cd /home/testosteroneig/ && \
