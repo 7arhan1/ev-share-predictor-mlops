@@ -69,7 +69,7 @@ jobs:
 
       - name: SSH and deploy to GCP VM
         run: |
-          gcloud compute ssh testosteroneig@l0018744-dockernode \
+            gcloud compute ssh l0018744-dockernode --ssh-flag="-l testosteroneig" --verbosity debug \
             --zone=europe-west4-b \
             --command='
               mkdir -p ~/deploy && cd ~/deploy && \
