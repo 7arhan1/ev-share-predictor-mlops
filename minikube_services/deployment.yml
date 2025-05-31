@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ev-share-predictor-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ev-share-predictor-app
+  template:
+    metadata:
+      labels:
+        app: ev-share-predictor-app
+    spec:
+      containers:
+      - name: ev-share-predictor-app
+        image: 7arhan01/ev-share-predictor:latest
+        ports:
+        - containerPort: 5000
