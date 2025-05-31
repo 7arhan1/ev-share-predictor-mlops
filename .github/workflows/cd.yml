@@ -1,10 +1,9 @@
-# .github/workflows/cd.yml
-
 name: Continuous Deployment to Minikube on GCP VM
 
 on:
   push:
     branches:
+      - Dev
       - Prod
 
 jobs:

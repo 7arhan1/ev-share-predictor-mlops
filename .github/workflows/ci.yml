@@ -1,5 +1,3 @@
-# .github/workflows/ci.yml
-
 name: Continuous Integration – Build & Test
 
 on:
