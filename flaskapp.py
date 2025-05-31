@@ -20,7 +20,8 @@ def predict():
     data = pd.DataFrame([[year]], columns=["Year"])
 
     # Make prediction
-    prediction = model.predict(data)
+    #prediction = model.predict(data)
+    prediction = 111
     formatted_prediction = f"Predicted EV stock share for {int(year)}: {round(float(prediction[0]), 2)}%"
 
     return render_template("result.html", prediction=formatted_prediction)
