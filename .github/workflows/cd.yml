@@ -3,11 +3,30 @@ name: Continuous Deployment to Minikube on GCP VM
 on:
   push:
     branches:
-      - Dev
       - Prod
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: python3 -m unittest discover tests
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -25,9 +44,6 @@ jobs:
 
     - name: Generate model.pkl
       run: python3 model.py
-
-    #- name: Run basic tests before deploy
-      #run: python3 -m unittest discover tests
 
     - name: Authenticate to GCP
       uses: google-github-actions/auth@v2
@@ -51,24 +67,24 @@ jobs:
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
         docker build -t $IMAGE_NAME:latest \
-                     -t $IMAGE_NAME:${{ github.ref_name }} \
-                     -t $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA .
+                     -t $IMAGE_NAME:Prod \
+                     -t $IMAGE_NAME:Prod-$SHORT_SHA .
 
         docker push $IMAGE_NAME:latest
-        docker push $IMAGE_NAME:${{ github.ref_name }}
-        docker push $IMAGE_NAME:${{ github.ref_name }}-$SHORT_SHA
+        docker push $IMAGE_NAME:Prod
+        docker push $IMAGE_NAME:Prod-$SHORT_SHA
 
     - name: SSH into GCP VM and deploy to Minikube
       run: |
-          gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
-          cd /home/testosteroneig && \
-          rm -rf ev-share-predictor-mlops && \
-          git clone -b Dev https://github.com/7arhan1/ev-share-predictor-mlops.git && \
-          cd ev-share-predictor-mlops && \
-          sudo pip3 install -r requirements.txt && \
-          python3 model.py && \
-          cd minikube_services && \
-          ls -l && \
-          /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
-          sleep 5 && \
-          /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
+        gcloud compute ssh testosteroneig@docker-practical1 --zone=europe-west4-b --command="
+        cd /home/testosteroneig && \
+        rm -rf ev-share-predictor-mlops && \
+        git clone -b Prod https://github.com/7arhan1/ev-share-predictor-mlops.git && \
+        cd ev-share-predictor-mlops && \
+        sudo pip3 install -r requirements.txt && \
+        python3 model.py && \
+        cd minikube_services && \
+        /usr/local/bin/minikube start --driver=docker && \
+        /usr/local/bin/minikube kubectl -- delete -f ./deployment.yml || true && \
+        sleep 5 && \
+        /usr/local/bin/minikube kubectl -- apply -f ./deployment.yml"
