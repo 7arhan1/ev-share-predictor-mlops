@@ -1,11 +1,17 @@
+import os
 import pickle
 import pandas as pd
 from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
+# Get absolute path to model.pkl relative to this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "model.pkl")
+
 # Load the trained model
-model = pickle.load(open("model.pkl", "rb"))
+with open(MODEL_PATH, "rb") as f:
+    model = pickle.load(f)
 
 @app.route("/")
 def home():
@@ -13,15 +19,11 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    # Get the input year from the form
     year = float(request.form["year"])
-
-    # Prepare data for prediction
     data = pd.DataFrame([[year]], columns=["Year"])
 
-    # Make prediction
-    #prediction = model.predict(data)
-    prediction = 111
+    # Uncomment this for actual prediction:
+    prediction = model.predict(data)
     formatted_prediction = f"Predicted EV stock share for {int(year)}: {round(float(prediction[0]), 2)}%"
 
     return render_template("result.html", prediction=formatted_prediction)

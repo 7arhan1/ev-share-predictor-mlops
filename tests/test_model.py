@@ -1,4 +1,3 @@
-# Unit Test for model.py
 import unittest
 import pandas as pd
 import os
@@ -7,8 +6,10 @@ from sklearn.linear_model import LinearRegression
 
 class TestModel(unittest.TestCase):
     def setUp(self):
-        # Load the model
-        with open("model.pkl", "rb") as f:
+        # Get the absolute path to model.pkl relative to this test file
+        base_dir = os.path.dirname(os.path.abspath(__file__))  # directory of this test file
+        model_path = os.path.join(base_dir, '..', 'model.pkl')  # model.pkl expected one level up
+        with open(model_path, "rb") as f:
             self.model = pickle.load(f)
 
     def test_model_type(self):

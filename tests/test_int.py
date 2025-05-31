@@ -1,5 +1,12 @@
-# Integration Test for flaskapp + model
+import os
+import sys
 import unittest
+
+# Setup paths to ensure model.pkl and flaskapp are found
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, repo_root)
+os.chdir(repo_root)
+
 from flaskapp import app
 
 class TestIntegration(unittest.TestCase):
