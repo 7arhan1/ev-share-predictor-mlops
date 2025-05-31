@@ -15,4 +15,7 @@ COPY templates/index.html templates/
 COPY templates/result.html templates/
 COPY flaskapp.py .
 
+CMD ["python3", "model.py"]
+
+
 ENTRYPOINT ["python3", "flaskapp.py"]
